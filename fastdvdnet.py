@@ -5,6 +5,8 @@ FastDVDnet denoising algorithm
 """
 import torch
 import torch.nn.functional as F
+from tqdm import tqdm
+
 
 def temp_denoise(model, noisyframe, sigma_noise):
     '''Encapsulates call to denoising model and handles padding.
@@ -53,7 +55,7 @@ def denoise_seq_fastdvdnet(seq, noise_std, temp_psz, model_temporal):
     # build noise map from noise std---assuming Gaussian noise
     noise_map = noise_std.expand((1, 1, H, W))
 
-    for fridx in range(numframes):
+    for fridx in tqdm(range(numframes)):
         # load input frames
         if not inframes:
         # if list not yet created, fill it with temp_patchsz frames
