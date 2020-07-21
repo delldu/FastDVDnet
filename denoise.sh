@@ -15,6 +15,8 @@ TEMP_OUTPUT_DIR=/tmp/fastdvdnet_output
 mkdir -p ${TEMP_INPUT_DIR}
 mkdir -p ${TEMP_OUTPUT_DIR}
 
+# video_coder is a bash
+
 video_coder --decode "$1" "${TEMP_INPUT_DIR}/%03d.png"
 
 python test_fastdvdnet.py \
