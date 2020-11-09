@@ -12,10 +12,11 @@ import torch
 import torch.nn as nn
 from models import FastDVDnet
 from fastdvdnet import denoise_seq_fastdvdnet
-from utils import batch_psnr, init_logger_test, variable_to_cv2_image, remove_dataparallel_wrapper, open_sequence, close_logger
+from utils import batch_psnr, variable_to_cv2_image, remove_dataparallel_wrapper, open_sequence
+import pdb
 
 NUM_IN_FR_EXT = 5  # temporal size of patch
-MC_ALGO = 'DeepFlow'  # motion estimation algorithm
+# MC_ALGO = 'DeepFlow'  # motion estimation algorithm
 OUTIMGEXT = '.png'  # output images format
 
 
@@ -66,7 +67,7 @@ def test_fastdvdnet(**args):
     # If save_path does not exist, create it
     if not os.path.exists(args['save_path']):
         os.makedirs(args['save_path'])
-    logger = init_logger_test(args['save_path'])
+    # logger = init_logger_test(args['save_path'])
 
     # Sets data type according to CPU or GPU modes
     if args['cuda']:
@@ -77,6 +78,7 @@ def test_fastdvdnet(**args):
     # Create models
     print('Loading models ...')
     model_temp = FastDVDnet(num_input_frames=NUM_IN_FR_EXT)
+    # pdb.set_trace()
 
     # Load saved weights
     state_temp_dict = torch.load(args['model_file'])
@@ -97,12 +99,16 @@ def test_fastdvdnet(**args):
                                   args['gray'],
                                   expand_if_needed=False,
                                   max_num_fr=args['max_num_fr_per_seq'])
+        # pdb.set_trace()
+        # (Pdb) seq.shape
+        # (100, 3, 540, 960)
         seq = torch.from_numpy(seq).to(device)
         seq_time = time.time()
 
         # Add noise
         noise = torch.empty_like(seq).normal_(mean=0,
                                               std=args['noise_sigma']).to(device)
+        # pdb.set_trace()
         # seqn = seq + noise
         # xxxx
         seqn = seq
@@ -112,6 +118,8 @@ def test_fastdvdnet(**args):
                                            noise_std=noisestd,
                                            temp_psz=NUM_IN_FR_EXT,
                                            model_temporal=model_temp)
+        # pdb.set_trace()
+
 
     # Compute PSNR and log it
     stop_time = time.time()
@@ -120,11 +128,11 @@ def test_fastdvdnet(**args):
     loadtime = (seq_time - start_time)
     runtime = (stop_time - seq_time)
     seq_length = seq.size()[0]
-    logger.info("Finished denoising {}".format(args['test_path']))
-    logger.info(
+    print("Finished denoising {}".format(args['test_path']))
+    print(
         "  Denoised {} frames in {:.3f}s, loaded seq in {:.3f}s".format(
             seq_length, runtime, loadtime))
-    logger.info("  PSNR noisy {:.4f}dB, PSNR result {:.4f}dB".format(
+    print("  PSNR noisy {:.4f}dB, PSNR result {:.4f}dB".format(
         psnr_noisy, psnr))
 
     # Save outputs
@@ -135,7 +143,7 @@ def test_fastdvdnet(**args):
                      args['save_noisy'])
 
     # close logger
-    close_logger(logger)
+    # close_logger(logger)
 
 
 if __name__ == "__main__":

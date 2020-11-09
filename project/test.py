@@ -21,8 +21,8 @@ if __name__ == "__main__":
     model_setenv()
 
     parser = argparse.ArgumentParser()
-    parser.add_argument('--checkpoint', type=str, default="output/VideoClean.pth", help="checkpoint file")
-    parser.add_argument('--bs', type=int, default=2, help="batch size")
+    parser.add_argument('--checkpoint', type=str, default="models/VideoClean.pth", help="checkpoint file")
+    parser.add_argument('--bs', type=int, default=8, help="batch size")
     args = parser.parse_args()
 
     # CPU or GPU ?

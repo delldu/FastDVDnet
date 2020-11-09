@@ -12,12 +12,13 @@ this program. If not, see <http://www.gnu.org/licenses/>.
 """
 import torch
 import torch.nn as nn
+import pdb
 
 
-class CvBlock(nn.Module):
+class ConvBlock(nn.Module):
     '''(Conv2d => BN => ReLU) x 2'''
     def __init__(self, in_ch, out_ch):
-        super(CvBlock, self).__init__()
+        super(ConvBlock, self).__init__()
         self.convblock = nn.Sequential(
             nn.Conv2d(in_ch, out_ch, kernel_size=3, padding=1),
             nn.BatchNorm2d(out_ch),
@@ -31,11 +32,11 @@ class CvBlock(nn.Module):
         return self.convblock(x)
 
 
-class InputCvBlock(nn.Module):
+class InputConvBlock(nn.Module):
     '''(Conv with num_in_frames groups => BN => ReLU) + (Conv => BN => ReLU)'''
 
     def __init__(self, num_in_frames, out_ch):
-        super(InputCvBlock, self).__init__()
+        super(InputConvBlock, self).__init__()
         self.interm_ch = 30
         self.convblock = nn.Sequential(
             nn.Conv2d(num_in_frames * (3 + 1),
@@ -62,7 +63,7 @@ class DownBlock(nn.Module):
             nn.Conv2d(in_ch, out_ch, kernel_size=3, padding=1, stride=2),
             nn.BatchNorm2d(out_ch),
             nn.ReLU(inplace=True),
-            CvBlock(out_ch, out_ch)
+            ConvBlock(out_ch, out_ch)
         )
 
     def forward(self, x):
@@ -74,7 +75,7 @@ class UpBlock(nn.Module):
     def __init__(self, in_ch, out_ch):
         super(UpBlock, self).__init__()
         self.convblock = nn.Sequential(
-            CvBlock(in_ch, in_ch),
+            ConvBlock(in_ch, in_ch),
             nn.Conv2d(in_ch, out_ch * 4, kernel_size=3, padding=1),
             nn.PixelShuffle(2)
         )
@@ -83,10 +84,10 @@ class UpBlock(nn.Module):
         return self.convblock(x)
 
 
-class OutputCvBlock(nn.Module):
+class OutputConvBlock(nn.Module):
     '''Conv2d => BN => ReLU => Conv2d'''
     def __init__(self, in_ch, out_ch):
-        super(OutputCvBlock, self).__init__()
+        super(OutputConvBlock, self).__init__()
         self.convblock = nn.Sequential(
             nn.Conv2d(in_ch, in_ch, kernel_size=3, padding=1),
             nn.BatchNorm2d(in_ch),
@@ -98,7 +99,7 @@ class OutputCvBlock(nn.Module):
         return self.convblock(x)
 
 
-class DenBlock(nn.Module):
+class DenoiseBlock(nn.Module):
     """ Definition of the denosing block of FastDVDnet.
     Inputs of constructor:
         num_input_frames: int. number of input frames
@@ -108,17 +109,17 @@ class DenBlock(nn.Module):
     """
 
     def __init__(self, num_input_frames=3):
-        super(DenBlock, self).__init__()
+        super(DenoiseBlock, self).__init__()
         self.chs_lyr0 = 32
         self.chs_lyr1 = 64
         self.chs_lyr2 = 128
 
-        self.inc = InputCvBlock(num_in_frames=num_input_frames, out_ch=self.chs_lyr0)
+        self.inc = InputConvBlock(num_in_frames=num_input_frames, out_ch=self.chs_lyr0)
         self.downc0 = DownBlock(in_ch=self.chs_lyr0, out_ch=self.chs_lyr1)
         self.downc1 = DownBlock(in_ch=self.chs_lyr1, out_ch=self.chs_lyr2)
         self.upc2 = UpBlock(in_ch=self.chs_lyr2, out_ch=self.chs_lyr1)
         self.upc1 = UpBlock(in_ch=self.chs_lyr1, out_ch=self.chs_lyr0)
-        self.outc = OutputCvBlock(in_ch=self.chs_lyr0, out_ch=3)
+        self.outc = OutputConvBlock(in_ch=self.chs_lyr0, out_ch=3)
 
         self.reset_params()
 
@@ -164,8 +165,8 @@ class FastDVDnet(nn.Module):
         super(FastDVDnet, self).__init__()
         self.num_input_frames = num_input_frames
         # Define models of each denoising stage
-        self.temp1 = DenBlock(num_input_frames=3)
-        self.temp2 = DenBlock(num_input_frames=3)
+        self.temp1 = DenoiseBlock(num_input_frames=3)
+        self.temp2 = DenoiseBlock(num_input_frames=3)
         # Init weights
         self.reset_params()
 
@@ -184,6 +185,7 @@ class FastDVDnet(nn.Module):
             noise_map: Tensor [N, 1, H, W] in the [0., 1.] range
         '''
         # Unpack inputs
+
         (x0, x1, x2, x3, x4) = tuple(x[:, 3 * m:3 * m + 3, :, :]
                                      for m in range(self.num_input_frames))
 

@@ -20,7 +20,7 @@ import numpy as np
 import cv2
 import torch
 from skimage.measure.simple_metrics import compare_psnr
-from tensorboardX import SummaryWriter
+# from tensorboardX import SummaryWriter
 
 IMAGETYPES = ('*.bmp', '*.png', '*.jpg', '*.jpeg', '*.tif'
               )  # Supported image types
@@ -82,14 +82,14 @@ def normalize_augment(datain, ctrl_fr_idx):
     return img_train, gt_train
 
 
-def init_logging(argdict):
-    """Initilizes the logging and the SummaryWriter modules
-    """
-    if not os.path.exists(argdict['log_dir']):
-        os.makedirs(argdict['log_dir'])
-    writer = SummaryWriter(argdict['log_dir'])
-    logger = init_logger(argdict['log_dir'], argdict)
-    return writer, logger
+# def init_logging(argdict):
+#     """Initilizes the logging and the SummaryWriter modules
+#     """
+#     if not os.path.exists(argdict['log_dir']):
+#         os.makedirs(argdict['log_dir'])
+#     writer = SummaryWriter(argdict['log_dir'])
+#     logger = init_logger(argdict['log_dir'], argdict)
+#     return writer, logger
 
 
 def get_imagenames(seq_dir, pattern=None):
@@ -265,60 +265,60 @@ def get_git_revision_short_hash():
                                     'HEAD']).strip()
 
 
-def init_logger(log_dir, argdict):
-    r"""Initializes a logging.Logger to save all the running parameters to a
-    log file
+# def init_logger(log_dir, argdict):
+#     r"""Initializes a logging.Logger to save all the running parameters to a
+#     log file
 
-    Args:
-        log_dir: path in which to save log.txt
-        argdict: dictionary of parameters to be logged
-    """
-    from os.path import join
+#     Args:
+#         log_dir: path in which to save log.txt
+#         argdict: dictionary of parameters to be logged
+#     """
+#     from os.path import join
 
-    logger = logging.getLogger(__name__)
-    logger.setLevel(level=logging.INFO)
-    fh = logging.FileHandler(join(log_dir, 'log.txt'), mode='w+')
-    formatter = logging.Formatter('%(asctime)s - %(message)s')
-    fh.setFormatter(formatter)
-    logger.addHandler(fh)
-    try:
-        logger.info("Commit: {}".format(get_git_revision_short_hash()))
-    except Exception as e:
-        logger.error("Couldn't get commit number: {}".format(e))
-    logger.info("Arguments: ")
-    for k in argdict.keys():
-        logger.info("\t{}: {}".format(k, argdict[k]))
+#     logger = logging.getLogger(__name__)
+#     logger.setLevel(level=logging.INFO)
+#     fh = logging.FileHandler(join(log_dir, 'log.txt'), mode='w+')
+#     formatter = logging.Formatter('%(asctime)s - %(message)s')
+#     fh.setFormatter(formatter)
+#     logger.addHandler(fh)
+#     try:
+#         logger.info("Commit: {}".format(get_git_revision_short_hash()))
+#     except Exception as e:
+#         logger.error("Couldn't get commit number: {}".format(e))
+#     logger.info("Arguments: ")
+#     for k in argdict.keys():
+#         logger.info("\t{}: {}".format(k, argdict[k]))
 
-    return logger
-
-
-def init_logger_test(result_dir):
-    r"""Initializes a logging.Logger in order to log the results after testing
-    a model
-
-    Args:
-        result_dir: path to the folder with the denoising results
-    """
-    from os.path import join
-
-    logger = logging.getLogger('testlog')
-    logger.setLevel(level=logging.INFO)
-    fh = logging.FileHandler(join(result_dir, 'log.txt'), mode='w+')
-    formatter = logging.Formatter('%(asctime)s - %(message)s')
-    fh.setFormatter(formatter)
-    logger.addHandler(fh)
-
-    return logger
+#     return logger
 
 
-def close_logger(logger):
-    '''Closes the logger instance
-    '''
-    x = list(logger.handlers)
-    for i in x:
-        logger.removeHandler(i)
-        i.flush()
-        i.close()
+# def init_logger_test(result_dir):
+#     r"""Initializes a logging.Logger in order to log the results after testing
+#     a model
+
+#     Args:
+#         result_dir: path to the folder with the denoising results
+#     """
+#     from os.path import join
+
+#     logger = logging.getLogger('testlog')
+#     logger.setLevel(level=logging.INFO)
+#     fh = logging.FileHandler(join(result_dir, 'log.txt'), mode='w+')
+#     formatter = logging.Formatter('%(asctime)s - %(message)s')
+#     fh.setFormatter(formatter)
+#     logger.addHandler(fh)
+
+#     return logger
+
+
+# def close_logger(logger):
+#     '''Closes the logger instance
+#     '''
+#     x = list(logger.handlers)
+#     for i in x:
+#         logger.removeHandler(i)
+#         i.flush()
+#         i.close()
 
 
 def normalize(data):
