@@ -16,6 +16,7 @@ import math
 import torch
 import torch.nn as nn
 from tqdm import tqdm
+from data import VIDEO_SEQUENCE_LENGTH
 
 import pdb
 
@@ -313,8 +314,10 @@ def train_epoch(loader, model, optimizer, device, tag=''):
     """Trainning model ..."""
 
     total_loss = Counter()
-
     model.train()
+    criterion = nn.MSELoss(reduction='sum')
+    start_channel = 3 * (VIDEO_SEQUENCE_LENGTH//2)
+    stop_channel = start_channel + 3
 
     with tqdm(total=len(loader.dataset)) as t:
         t.set_description(tag)
@@ -323,17 +326,29 @@ def train_epoch(loader, model, optimizer, device, tag=''):
             images = data
             count = len(images)
 
-            pdb.set_trace()
+            # noise
+            # input_tensor = images + noise
+            # noise_tensor = ...
 
-            # Transform data to device
-            images = images.to(device)
-            targets = targets.to(device)
+            # output_tensor = model(input_tensor, noise_tensor)
+            # loss = criterion(images, output_tensor)
+            N, C, H, W = images.size()
+            stdn = torch.empty((N, 1, 1, 1)).uniform_(5.0, 55.0)/255.0
+            noise = torch.zeros_like(images)
+            noise = torch.normal(mean=noise, std=stdn.expand_as(noise))
 
-            predicts = model(images)
+            input_tensor = images + noise
+            noise_tensor = stdn.expand((N, 1, H, W)) # one channel per image
 
-            # xxxx--modify here
-            loss = nn.L1Loss(predicts, targets)
+            # images = images.to(device)
+            input_tensor = input_tensor.to(device)
+            noise_tensor = noise_tensor.to(device)
+            GT = images[:, start_channel: stop_channel, :, :].to(device)
 
+            output_tensor = model(input_tensor, noise_tensor)
+            # pdb.set_trace()
+
+            loss = criterion(GT, output_tensor)
             loss_value = loss.item()
             if not math.isfinite(loss_value):
                 print("Loss is {}, stopping training".format(loss_value))
@@ -347,12 +362,7 @@ def train_epoch(loader, model, optimizer, device, tag=''):
 
             # Optimizer
             optimizer.zero_grad()
-            if os.environ["ENABLE_APEX"] == "YES":
-                from apex import amp
-                with amp.scale_loss(loss, optimizer) as scaled_loss:
-                    scaled_loss.backward()
-            else:
-                loss.backward()
+            loss.backward()
             optimizer.step()
 
         return total_loss.avg
@@ -364,6 +374,8 @@ def valid_epoch(loader, model, device, tag=''):
     valid_loss = Counter()
 
     model.eval()
+    start_channel = 3 * (VIDEO_SEQUENCE_LENGTH//2)
+    stop_channel = start_channel + 3
 
     with tqdm(total=len(loader.dataset)) as t:
         t.set_description(tag)
@@ -372,18 +384,26 @@ def valid_epoch(loader, model, device, tag=''):
             images = data
             count = len(images)
 
-            pdb.set_trace()            
+            N, C, H, W = images.size()
 
             # Transform data to device
-            images = images.to(device)
+            GT = images[:, start_channel: stop_channel, :, :].to(device)
+
+            noise = torch.FloatTensor(images.size()).normal_(mean=0, std=25.0/255.0)
+            input_tensor = images + noise
+            input_tensor = input_tensor.to(device)
+
+            noise_std = torch.FloatTensor([25.0/255.0])
+            noise_tensor = noise_std.expand((N, 1, H, W))
+            noise_tensor = noise_tensor.to(device)
 
             # Predict results without calculating gradients
             with torch.no_grad():
-                predicts = model(images)
+                predicts = model(input_tensor, noise_tensor)
 
-            # xxxx--modify here
+            loss_value = PSNR(predicts, GT)
             valid_loss.update(loss_value, count)
-            t.set_postfix(loss='{:.6f}'.format(valid_loss.avg))
+            t.set_postfix(loss='PSNR:{:.6f}'.format(valid_loss.avg))
             t.update(count)
 
 

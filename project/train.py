@@ -25,7 +25,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument('--outputdir', type=str, default="output", help="output directory")
     parser.add_argument('--checkpoint', type=str, default="models/VideoClean.pth", help="checkpoint file")
-    parser.add_argument('--bs', type=int, default=8, help="batch size")
+    parser.add_argument('--bs', type=int, default=1, help="batch size")
     parser.add_argument('--lr', type=float, default=1e-4, help="learning rate")
     parser.add_argument('--epochs', type=int, default=10)
     args = parser.parse_args()
@@ -43,10 +43,11 @@ if __name__ == "__main__":
     model.to(device)
 
     # construct optimizer and learning rate scheduler,
-    # xxxx--modify here
     params = [p for p in model.parameters() if p.requires_grad]
-    optimizer = optim.SGD(params, lr=args.lr, momentum=0.9, weight_decay=0.0005)
-    lr_scheduler = optim.lr_scheduler.StepLR(optimizer, step_size=5, gamma=0.1)
+    # optimizer = optim.SGD(params, lr=args.lr, momentum=0.9, weight_decay=0.0005)
+    optimizer = optim.Adam(params, lr=args.lr)
+    optimizer.zero_grad()
+    lr_scheduler = optim.lr_scheduler.StepLR(optimizer, step_size=100, gamma=0.1)
 
     # get data loader
     train_dl, valid_dl = get_data(trainning=True, bs=args.bs)

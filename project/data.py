@@ -134,16 +134,17 @@ def train_data(bs):
 
     valid_ds = data.Subset(train_ds, indices)
     # adjust index offset of valid_ds
-    offset = valid_ds.indexs[0]
-    for i in range(len(valid_ds)):
-        valid_ds.indexs[i] -= offset
+    # offset = valid_ds.indexs[0]
+    # for i in range(len(valid_ds)):
+    #     valid_ds.indexs[i] -= offset
 
     indices = [i for i in range(len(train_ds) - valid_len)]
     train_ds = data.Subset(train_ds, indices)
 
     # Define training and validation data loaders
-    train_dl = data.DataLoader(train_ds, batch_size=bs, shuffle=True, num_workers=4)
-    valid_dl = data.DataLoader(valid_ds, batch_size=bs, shuffle=False, num_workers=4)
+    n_threads = min(4,  bs)
+    train_dl = data.DataLoader(train_ds, batch_size=bs, shuffle=True, num_workers=n_threads)
+    valid_dl = data.DataLoader(valid_ds, batch_size=bs, shuffle=False, num_workers=n_threads)
 
     return train_dl, valid_dl
 
