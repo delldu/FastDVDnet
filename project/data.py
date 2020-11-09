@@ -44,7 +44,7 @@ class Video(data.Dataset):
         self.images = []
 
     def reset(self, root):
-        print("Video Reset Root: ", root)
+        # print("Video Reset Root: ", root)
         self.root = root
         self.images = list(sorted(os.listdir(root)))
 
@@ -54,16 +54,16 @@ class Video(data.Dataset):
         filelist = []
         for k in range(-(self.seqlen//2), (self.seqlen//2) + 1):
             if (idx + k < 0):
-                filelist.append(self.images[0])
+                filename = self.images[0]
             elif (idx + k >= n):
-                filelist.append(self.images[n - 1])
+                filename = self.images[n - 1]
             else:
-                filelist.append(self.images[idx + k])
+                filename = self.images[idx + k]
+            filelist.append(os.path.join(self.root, filename))
         # print("filelist: ", filelist)
         sequence = []
         for filename in filelist:
-            img_path = os.path.join(self.root, filename)
-            img = Image.open(img_path).convert("RGB")
+            img = Image.open(filename).convert("RGB")
             if self.transforms is not None:
                 img = self.transforms(img)
             sequence.append(img)
@@ -102,6 +102,7 @@ class VideoCleanDataset(data.Dataset):
 
     def __getitem__(self, idx):
         """Load images."""
+        # print("dataset index:", idx)
         image_path = os.path.join(self.root, self.images[idx])
         if (self.video_cache.root != os.path.dirname(image_path)):
             self.video_cache.reset(os.path.dirname(image_path))
