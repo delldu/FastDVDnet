@@ -10,15 +10,17 @@
 # ************************************************************************************/
 #
 
-import os
-import sys
 import math
+import os
+import pdb
+import sys
+
 import torch
 import torch.nn as nn
 from tqdm import tqdm
+
 from data import VIDEO_SEQUENCE_LENGTH
 
-import pdb
 
 def PSNR(img1, img2):
     """PSNR."""
@@ -30,8 +32,10 @@ def PSNR(img1, img2):
 # https://github.com/m-tassano/fastdvdnet
 # Thanks a lot.
 
+
 class ConvBlock(nn.Module):
     '''(Conv2d => BN => ReLU) x 2'''
+
     def __init__(self, in_ch, out_ch):
         super(ConvBlock, self).__init__()
         self.convblock = nn.Sequential(
@@ -61,7 +65,8 @@ class InputConvBlock(nn.Module):
                       groups=num_in_frames),
             nn.BatchNorm2d(num_in_frames * self.interm_ch),
             nn.ReLU(inplace=True),
-            nn.Conv2d(num_in_frames * self.interm_ch, out_ch, kernel_size=3, padding=1),
+            nn.Conv2d(num_in_frames * self.interm_ch,
+                      out_ch, kernel_size=3, padding=1),
             nn.BatchNorm2d(out_ch),
             nn.ReLU(inplace=True)
         )
@@ -72,6 +77,7 @@ class InputConvBlock(nn.Module):
 
 class DownBlock(nn.Module):
     '''Downscale + (Conv2d => BN => ReLU)*2'''
+
     def __init__(self, in_ch, out_ch):
         super(DownBlock, self).__init__()
         self.convblock = nn.Sequential(
@@ -87,6 +93,7 @@ class DownBlock(nn.Module):
 
 class UpBlock(nn.Module):
     '''(Conv2d => BN => ReLU)*2 + Upscale'''
+
     def __init__(self, in_ch, out_ch):
         super(UpBlock, self).__init__()
         self.convblock = nn.Sequential(
@@ -101,6 +108,7 @@ class UpBlock(nn.Module):
 
 class OutputConvBlock(nn.Module):
     '''Conv2d => BN => ReLU => Conv2d'''
+
     def __init__(self, in_ch, out_ch):
         super(OutputConvBlock, self).__init__()
         self.convblock = nn.Sequential(
@@ -129,7 +137,8 @@ class DenoiseBlock(nn.Module):
         self.chs_lyr1 = 64
         self.chs_lyr2 = 128
 
-        self.inc = InputConvBlock(num_in_frames=num_input_frames, out_ch=self.chs_lyr0)
+        self.inc = InputConvBlock(
+            num_in_frames=num_input_frames, out_ch=self.chs_lyr0)
         self.downc0 = DownBlock(in_ch=self.chs_lyr0, out_ch=self.chs_lyr1)
         self.downc1 = DownBlock(in_ch=self.chs_lyr1, out_ch=self.chs_lyr2)
         self.upc2 = UpBlock(in_ch=self.chs_lyr2, out_ch=self.chs_lyr1)
@@ -153,7 +162,8 @@ class DenoiseBlock(nn.Module):
             noise_map: Tensor [N, 1, H, W] in the [0., 1.] range
         '''
         # Input convolution block
-        x0 = self.inc(torch.cat((in0, noise_map, in1, noise_map, in2, noise_map), dim=1))
+        x0 = self.inc(
+            torch.cat((in0, noise_map, in1, noise_map, in2, noise_map), dim=1))
         # Downsampling
         x1 = self.downc0(x0)
         x2 = self.downc1(x1)
@@ -167,6 +177,7 @@ class DenoiseBlock(nn.Module):
         x = in1 - x
 
         return x
+
 
 class VideoCleanModel(nn.Module):
     """VideoClean Model."""
@@ -219,6 +230,7 @@ class VideoCleanModel(nn.Module):
     #     """Forward."""
     #     return x
 
+
 def model_load(model, path):
     """Load model."""
     if not os.path.exists(path):
@@ -237,6 +249,7 @@ def model_load(model, path):
 def model_save(model, path):
     """Save model."""
     torch.save(model.state_dict(), path)
+
 
 def model_export():
     """Export model to onnx."""
@@ -258,15 +271,15 @@ def model_export():
     print("Export model ...")
     # xxxx--modify here
     dummy_input = torch.randn(1, 3, 512, 512)
-    input_names = [ "input" ]
-    output_names = [ "output" ]
+    input_names = ["input"]
+    output_names = ["output"]
     torch.onnx.export(model, dummy_input, onnx_file,
-                    input_names=input_names, 
-                    output_names=output_names,
-                    verbose=True,
-                    opset_version=11,
-                    keep_initializers_as_inputs=True,
-                    export_params=True)
+                      input_names=input_names,
+                      output_names=output_names,
+                      verbose=True,
+                      opset_version=11,
+                      keep_initializers_as_inputs=True,
+                      export_params=True)
 
     # 3. Optimize model
     print('Checking model ...')
@@ -274,7 +287,8 @@ def model_export():
     onnx.checker.check_model(model)
 
     print("Optimizing model ...")
-    passes = ["extract_constant_to_initializer", "eliminate_unused_initializer"]
+    passes = ["extract_constant_to_initializer",
+              "eliminate_unused_initializer"]
     optimized_model = optimizer.optimize(model, passes)
     onnx.save(optimized_model, onnx_file)
 
@@ -338,7 +352,7 @@ def train_epoch(loader, model, optimizer, device, tag=''):
             noise = torch.normal(mean=noise, std=stdn.expand_as(noise))
 
             input_tensor = images + noise
-            noise_tensor = stdn.expand((N, 1, H, W)) # one channel per image
+            noise_tensor = stdn.expand((N, 1, H, W))  # one channel per image
 
             # images = images.to(device)
             input_tensor = input_tensor.to(device)
@@ -389,7 +403,8 @@ def valid_epoch(loader, model, device, tag=''):
             # Transform data to device
             GT = images[:, start_channel: stop_channel, :, :].to(device)
 
-            noise = torch.FloatTensor(images.size()).normal_(mean=0, std=25.0/255.0)
+            noise = torch.FloatTensor(images.size()).normal_(
+                mean=0, std=25.0/255.0)
             input_tensor = images + noise
             input_tensor = input_tensor.to(device)
 
@@ -424,7 +439,6 @@ def model_setenv():
 
     if os.environ.get("DEVICE") != "YES" and os.environ.get("DEVICE") != "NO":
         os.environ["DEVICE"] = 'cuda' if torch.cuda.is_available() else 'cpu'
-
 
     # Is there GPU ?
     if not torch.cuda.is_available():

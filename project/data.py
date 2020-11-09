@@ -11,17 +11,18 @@
 #
 
 import os
+import pdb
+
 import torch
-from PIL import Image
 import torch.utils.data as data
 import torchvision.transforms as T
 import torchvision.utils as utils
-
-import pdb
+from PIL import Image
 
 train_dataset_rootdir = "dataset/train/"
 test_dataset_rootdir = "dataset/test/"
 VIDEO_SEQUENCE_LENGTH = 5
+
 
 def get_transform(train=True):
     """Transform images."""
@@ -32,13 +33,14 @@ def get_transform(train=True):
     ts.append(T.ToTensor())
     return T.Compose(ts)
 
+
 class Video(data.Dataset):
     """Define Video Frames Class."""
 
     def __init__(self, seqlen=VIDEO_SEQUENCE_LENGTH, transforms=get_transform()):
         """Init dataset."""
         super(Video, self).__init__()
-        self.seqlen = seqlen;
+        self.seqlen = seqlen
         self.transforms = transforms
         self.root = ""
         self.images = []
@@ -68,12 +70,13 @@ class Video(data.Dataset):
                 img = self.transforms(img)
             sequence.append(img)
         if self.transforms is not None:
-            return torch.cat(sequence, dim = 0)
+            return torch.cat(sequence, dim=0)
         return sequence
 
     def __len__(self):
         """Return total numbers of images."""
         return len(self.images)
+
 
 class VideoCleanDataset(data.Dataset):
     """Define dataset."""
@@ -98,7 +101,7 @@ class VideoCleanDataset(data.Dataset):
                 self.images.append(d + "/" + f)
                 self.indexs.append(offset)
             offset += len(fs)
-        self.video_cache = Video(seqlen = seqlen, transforms = transforms)
+        self.video_cache = Video(seqlen=seqlen, transforms=transforms)
 
     def __getitem__(self, idx):
         """Load images."""
@@ -120,13 +123,16 @@ class VideoCleanDataset(data.Dataset):
         fmt_str += '    Number of samples: {}\n'.format(self.__len__())
         fmt_str += '    Root Location: {}\n'.format(self.root)
         tmp = '    Transforms: '
-        fmt_str += '{0}{1}\n'.format(tmp, self.transforms.__repr__().replace('\n', '\n' + ' ' * len(tmp)))
+        fmt_str += '{0}{1}\n'.format(
+            tmp, self.transforms.__repr__().replace('\n', '\n' + ' ' * len(tmp)))
         return fmt_str
+
 
 def train_data(bs):
     """Get data loader for trainning & validating, bs means batch_size."""
 
-    train_ds = VideoCleanDataset(train_dataset_rootdir, VIDEO_SEQUENCE_LENGTH, get_transform(train=True))
+    train_ds = VideoCleanDataset(
+        train_dataset_rootdir, VIDEO_SEQUENCE_LENGTH, get_transform(train=True))
     print(train_ds)
 
     # Split train_ds in train and valid set
@@ -144,16 +150,21 @@ def train_data(bs):
 
     # Define training and validation data loaders
     n_threads = min(4,  bs)
-    train_dl = data.DataLoader(train_ds, batch_size=bs, shuffle=True, num_workers=n_threads)
-    valid_dl = data.DataLoader(valid_ds, batch_size=bs, shuffle=False, num_workers=n_threads)
+    train_dl = data.DataLoader(
+        train_ds, batch_size=bs, shuffle=True, num_workers=n_threads)
+    valid_dl = data.DataLoader(
+        valid_ds, batch_size=bs, shuffle=False, num_workers=n_threads)
 
     return train_dl, valid_dl
+
 
 def test_data(bs):
     """Get data loader for test, bs means batch_size."""
 
-    test_ds = VideoCleanDataset(test_dataset_rootdir, VIDEO_SEQUENCE_LENGTH, get_transform(train=False))
-    test_dl = data.DataLoader(test_ds, batch_size=bs, shuffle=False, num_workers=4)
+    test_ds = VideoCleanDataset(
+        test_dataset_rootdir, VIDEO_SEQUENCE_LENGTH, get_transform(train=False))
+    test_dl = data.DataLoader(test_ds, batch_size=bs,
+                              shuffle=False, num_workers=4)
 
     return test_dl
 
@@ -162,6 +173,7 @@ def get_data(trainning=True, bs=4):
     """Get data loader for trainning & validating, bs means batch_size."""
 
     return train_data(bs) if trainning else test_data(bs)
+
 
 def VideoCleanDatasetTest():
     """Test dataset ..."""
@@ -172,7 +184,6 @@ def VideoCleanDatasetTest():
 
     # vs = Video()
     # vs.reset("dataset/predict/input")
-
 
 
 if __name__ == '__main__':
