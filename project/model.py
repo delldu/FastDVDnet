@@ -258,8 +258,8 @@ def export_onnx_model():
     import onnx
     from onnx import optimizer
 
-    onnx_file = "output/video_clean.onnx"
-    weight_file = "output/VideoClean.pth"
+    onnx_file = "models/video_clean.onnx"
+    weight_file = "models/VideoClean.pth"
 
     # 1. Load model
     print("Loading model ...")
@@ -303,8 +303,8 @@ def export_onnx_model():
 def export_torch_model():
     """Export torch model."""
 
-    script_file = "output/video_clean.pt"
-    weight_file = "output/VideoClean.pth"
+    script_file = "models/video_clean.pt"
+    weight_file = "models/VideoClean.pth"
 
     # 1. Load model
     print("Loading model ...")
